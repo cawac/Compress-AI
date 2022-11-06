@@ -42,15 +42,19 @@ def get_vector(matrix: Tuple[Tuple[list]], height_of_block: int, width_of_block:
             result.append(tuple(matrix[y + i][x + j] for i in range(width_of_block) for j in range(height_of_block)))
             x += height_of_block
         if x + height_of_block >= width:
-            result.append(tuple(matrix[y + i][width - height_of_block + j] for i in range(width_of_block) for j in range(height_of_block)))
+            result.append(tuple(matrix[y + i][width - height_of_block + j] for i in range(width_of_block) for j in
+                                range(height_of_block)))
         y += width_of_block
     if y + width_of_block >= height:
         x = 0
         while x + height_of_block < width:
-            result.append(tuple(matrix[height - width_of_block + i][x + j] for i in range(width_of_block) for j in range(height_of_block)))
+            result.append(tuple(matrix[height - width_of_block + i][x + j] for i in range(width_of_block) for j in
+                                range(height_of_block)))
             x += height_of_block
         if x + height_of_block >= width:
-            result.append(tuple(matrix[height - width_of_block + i][width - height_of_block + j] for i in range(width_of_block) for j in range(height_of_block)))
+            result.append(tuple(
+                matrix[height - width_of_block + i][width - height_of_block + j] for i in range(width_of_block) for j in
+                range(height_of_block)))
     return tuple(result)
 
 
@@ -174,7 +178,7 @@ def learning(height, width, n, m, W1, W2, image, E):
                 break
     else:
         print("doesn't work")
-    return nX, Y
+    return nX, Y, X, W1, W2
 
 
 def saving(nX, Y, height, width, n, m, image, neurons, image_name, W1, W2):
@@ -188,6 +192,59 @@ def saving(nX, Y, height, width, n, m, image, neurons, image_name, W1, W2):
     # archieve after learning
     with open(f"archieve/{n}x{m}x{neurons}.json", 'w+') as json_file:
         dump({"n": n, "m": m, "neurons": neurons, "weight1": W1, "weight2": W2}, json_file)
-    with open(f"Y/{image_name[:-4]}.json", 'w+') as json_file:
-        dump({"Y": Y, "n": n, "m": m, "neurons": neurons, "weight1": W1, "weight2": W2, "width": width, "height": height}, json_file)
+    with open(f"Y/{image_name}.json", 'w+') as json_file:
+        dump({"Y": Y, "n": n, "m": m, "neurons": neurons, "weight1": W1, "weight2": W2, "width": width,
+              "height": height}, json_file)
 
+
+def from_archieve():
+    E = int(input("error "))  # between c 1 for 256x256 picture
+    image_name = input("image name ")
+    image = Image.open("images/" + image_name)
+    image = image.convert('RGB')
+    width, height = image.size
+    n = int(input("width of block "))  # width of block
+    m = int(input("height of block "))  # height of block
+    neurons = int(input("neurons number "))
+    with open(f"archieve/{n}x{m}x{neurons}.json", "r") as json_file:
+        start_parametrs = load(json_file)
+        W1 = tuple(tuple(i) for i in start_parametrs["weight1"])
+        W2 = tuple(tuple(i) for i in start_parametrs["weight2"])
+    nX, Y, X, W1, W2 = learning(height, width, n, m, W1, W2, image, E)
+    saving(nX, Y, height, width, n, m, image, neurons, image_name, W1, W2)
+
+
+def new_weights():
+    E = int(input("error "))  # between 1 for 256x256 picture
+    image_name = input("image name ")
+    image = Image.open("images/" + image_name)
+    image = image.convert('RGB')
+    width, height = image.size
+    n = int(input("width of block "))  # width of block
+    m = int(input("height of block "))  # height of block
+    neurons = int(input("neurons number (usually 3) "))
+    W1, W2 = make_weights(n, m, neurons)
+    nX, Y, X, W1, W2 = learning(height, width, n, m, W1, W2, image, E)
+    saving(nX, Y, height, width, n, m, image, neurons, image_name, W1, W2)
+
+
+def from_compressed_image():
+    # E = int(input("error "))  # between 1 for 256x256 picture
+    E = int(input("error "))  # between 1 for 256x256 picture
+    image_name = input("image name ")
+    image = Image.open("images/" + image_name)
+    image = image.convert('RGB')
+    # width, height = image.size
+    with open(f"Y/{image_name}.json", "r") as json_file:
+        start_parametrs = load(json_file)
+        W1 = tuple(tuple(i) for i in start_parametrs["weight1"])
+        W2 = tuple(tuple(i) for i in start_parametrs["weight2"])
+        Y = tuple(tuple(i) for i in start_parametrs["Y"])
+        m = start_parametrs["n"]
+        n = start_parametrs["m"]
+        width = start_parametrs["width"]
+        height = start_parametrs["height"]
+        neurons = start_parametrs["neurons"]
+    nX = multiplication(Y, W2)
+    nX, Y, X, W1, W2 = learning(height, width, n, m, W1, W2, image, E)
+    saving(nX, Y, height, width, n, m, image, neurons, image_name, W1, W2)
